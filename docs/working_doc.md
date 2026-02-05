@@ -8,7 +8,7 @@
 
 ## 1. Project Motivation
 
-Modern robotic systems struggle less with motion and more with **understanding what matters in a scene**.
+Modern robotic systems struggle less wTith motion and more with **understanding what matters in a scene**.
 This project explores a perception-first robotics pipeline where vision and language guide task execution,
 rather than hard-coded object lists.
 
@@ -78,8 +78,6 @@ graph TD
 ```
 
 ---
-
-
 
 ## 6. Perception Pipeline (v1)
 
@@ -204,3 +202,15 @@ These questions will be revisited during implementation.
 
 > This document prioritizes clarity over completeness.
 > Scope may evolve, but all major decisions should be recorded here.
+
+---
+
+
+
+## Development Environment
+
+- **OS:** Ubuntu 24.04.3
+- **ROS 2:** Jazzy Jalisco (Debian packages)
+- **Simulation:** Gazebo Harmonic
+- **Planning:** MoveIt 2 (Jazzy binaries)
+- **Python:** `venv` for ML dependencies (YOLO stack)
