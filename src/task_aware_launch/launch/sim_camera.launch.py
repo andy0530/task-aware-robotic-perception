@@ -7,7 +7,7 @@ import os
 def generate_launch_description():
 
     sim_share = get_package_share_directory('task_aware_sim')
-    world_path = os.path.join(sim_share, 'worlds', 'table_camera.sdf')
+    world_path = os.path.join(sim_share, 'worlds', 'table_v1.sdf')
 
     launch_share = get_package_share_directory('task_aware_launch')
     rviz_config = os.path.join(launch_share, 'rviz', 'camera_view.rviz')

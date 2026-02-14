@@ -1,0 +1,151 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="task_aware_world">
+
+    <!-- Systems: these make physics + sensors + scene updates work in Gazebo Harmonic -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+
+    <!-- Lighting -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun</uri>
+    </include>
+    <scene>
+      <ambient>0.5 0.5 0.5 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+    </scene>
+
+    <!-- Ground plane -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane</uri>
+    </include>
+
+    <!-- Simple table (static box) -->
+    <model name="table">
+      <static>true</static>
+      <link name="link">
+        <!-- table surface around z=0.5 -->
+        <pose>0 0 0.5 0 0 0</pose>
+
+        <collision name="collision">
+          <geometry>
+            <box><size>1.2 0.8 0.05</size></box>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <geometry>
+            <box><size>1.2 0.8 0.05</size></box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Fixed overhead RGB camera -->
+    <model name="fixed_camera">
+      <static>true</static>
+      <link name="camera_link">
+        <!-- x y z roll pitch yaw -->
+        <!-- 1.8m above origin, pitched down 90deg -->
+        <pose>0 0 1.8 0 1.5708 0</pose>
+
+        <sensor name="rgb_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>15</update_rate>
+          <visualize>true</visualize>
+
+          <!-- Optional: makes topic discovery easier -->
+          <topic>/fixed_camera/rgb/image</topic>
+
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>1280</width>
+              <height>720</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.05</near>
+              <far>10</far>
+            </clip>
+          </camera>
+        </sensor>
+
+      </link>
+    </model>
+
+    
+    <!-- Red cube -->
+    <model name="obj_red_cube">
+      <static>false</static>
+      <pose>0.25 0.10 0.85 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.2</mass>
+          <inertia>
+            <ixx>0.0002</ixx><iyy>0.0002</iyy><izz>0.0002</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Green cylinder -->
+    <model name="obj_green_cyl">
+      <static>false</static>
+      <pose>-0.20 -0.05 0.85 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.2</mass>
+          <inertia>
+            <ixx>0.00025</ixx><iyy>0.00025</iyy><izz>0.00010</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.035</radius><length>0.08</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.035</radius><length>0.08</length></cylinder></geometry>
+          <material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Blue sphere -->
+    <model name="obj_blue_sphere">
+      <static>false</static>
+      <pose>0.05 -0.20 0.85 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.2</mass>
+          <inertia>
+            <ixx>0.0002</ixx><iyy>0.0002</iyy><izz>0.0002</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+          <material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

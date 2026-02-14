@@ -12,6 +12,8 @@ from std_msgs.msg import String
 from tf2_ros import Buffer, TransformListener
 from tf2_ros import LookupException, ConnectivityException, ExtrapolationException
 
+import json
+
 
 @dataclass
 class StreamStats:
@@ -23,7 +25,6 @@ class StreamStats:
     encoding: str = ""
     frame_id: str = ""
 
-
 @dataclass
 class CameraInfoStats:
     last_ros_time: Optional[Time] = None
@@ -33,6 +34,17 @@ class CameraInfoStats:
     cx: float = 0.0
     cy: float = 0.0
     ok: bool = False
+    
+@dataclass
+class YoloStats:
+    last_wall_time: Optional[float] = None
+    dets: int = 0
+    inference_ms: float = 0.0
+    inference_ms_ema: float = 0.0
+    top_label: str = "N/A"
+    top_conf: float = 0.0
+    ok: bool = False
+
 
 
 class TaskAwareDashboard(Node):
@@ -45,6 +57,9 @@ class TaskAwareDashboard(Node):
         self.declare_parameter('fixed_frame', 'world')
         self.declare_parameter('camera_frame', 'fixed_camera/camera_link/rgb_camera')
         self.declare_parameter('refresh_hz', 1.0)
+        self.declare_parameter('detections_topic', '/perception/detections')
+        self.detections_topic = self.get_parameter('detections_topic').get_parameter_value().string_value
+        self.yolo = YoloStats()
 
         self.image_topic = self.get_parameter('image_topic').get_parameter_value().string_value
         self.camera_info_topic = self.get_parameter('camera_info_topic').get_parameter_value().string_value
@@ -63,6 +78,8 @@ class TaskAwareDashboard(Node):
         # ---- Subscribers ----
         self.create_subscription(Image, self.image_topic, self.on_image, 10)
         self.create_subscription(CameraInfo, self.camera_info_topic, self.on_camera_info, 10)
+        self.create_subscription(String, self.detections_topic, self.on_detections, 10)
+
 
         # ---- Publisher ----
         self.status_pub = self.create_publisher(String, '/task_aware/status', 10)
@@ -131,10 +148,33 @@ class TaskAwareDashboard(Node):
         # Returns True if any node name contains the fragment
         nodes = self.get_node_names()
         return any(name_fragment in n for n in nodes)
+    
+    def on_detections(self, msg: String):
+        self.yolo.last_wall_time = time.time()
+        try:
+            data = json.loads(msg.data)
+            self.yolo.dets = int(data.get("num_detections", 0))
+            self.yolo.inference_ms = float(data.get("inference_ms", 0.0))
+            self.yolo.inference_ms_ema = float(data.get("inference_ms_ema", 0.0))
+
+            dets = data.get("detections", [])
+            if dets:
+                # take highest-confidence det
+                best = max(dets, key=lambda d: float(d.get("conf", 0.0)))
+                self.yolo.top_label = str(best.get("class_name", "N/A"))
+                self.yolo.top_conf = float(best.get("conf", 0.0))
+            else:
+                self.yolo.top_label = "N/A"
+                self.yolo.top_conf = 0.0
+
+            self.yolo.ok = True
+        except Exception:
+            self.yolo.ok = False
 
     def refresh(self):
         img_stale = self._staleness_ms(self.img.last_wall_time)
         info_stale = self._staleness_ms(self.caminfo.last_wall_time)
+        yolo_stale = self._staleness_ms(self.yolo.last_wall_time)
         tf_ok, tf_msg = self._tf_ok()
 
         # Bridge nodes (best-effort checks)
@@ -160,6 +200,14 @@ class TaskAwareDashboard(Node):
         sys_line = (
             f"BRIDGE gz_bridge={'YES' if has_gz_bridge else 'NO'}  "
         )
+        yolo_line = (
+            f"YOLO   topic={self.detections_topic}  "
+            f"stale={yolo_stale if yolo_stale is not None else 'N/A'}ms  "
+            f"dets={self.yolo.dets}  "
+            f"inf={self.yolo.inference_ms:.1f}ms  ema={self.yolo.inference_ms_ema:.1f}ms  "
+            f"top={self.yolo.top_label} {self.yolo.top_conf:.2f}  "
+            f"ok={'YES' if self.yolo.ok else 'NO'}"
+        )
 
         # Print (clear-ish)
         print("\n" + "=" * 90)
@@ -167,12 +215,14 @@ class TaskAwareDashboard(Node):
         print(img_line)
         print(info_line)
         print(tf_line)
+        print(yolo_line)
         print(sys_line)
 
         # Publish summary
         summary = String()
-        summary.data = f"{img_line} | {info_line} | {tf_line} | {sys_line}"
+        summary.data = f"{img_line} | {info_line} | {tf_line} | {yolo_line} | {sys_line}"
         self.status_pub.publish(summary)
+
 
 
 def main():
