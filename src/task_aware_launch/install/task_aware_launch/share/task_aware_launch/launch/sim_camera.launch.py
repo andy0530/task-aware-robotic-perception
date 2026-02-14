@@ -1,0 +1,1 @@
+/home/nd/Documents/dev/task-aware-robotic-perception/src/task_aware_launch/build/task_aware_launch/launch/sim_camera.launch.py
