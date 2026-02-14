@@ -21,21 +21,28 @@ def generate_launch_description():
         ],
         output='screen'
     )
-
-    image_bridge = Node(
-        package='ros_gz_image',
-        executable='image_bridge',
-        arguments=['/fixed_camera/rgb/image'],
-        remappings=[('/fixed_camera/rgb/image', '/camera/color/image_raw'),],
+    
+    camera_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/fixed_camera/rgb/image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/fixed_camera/rgb/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+        ],
+        remappings=[
+            ('/fixed_camera/rgb/image', '/camera/color/image_raw'),
+            ('/fixed_camera/rgb/camera_info', '/camera/camera_info'),
+        ],
         output='screen'
     )
+
 
     static_tf_world = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         arguments=[
             '0', '0', '1.8',     # x y z (meters)
-            '0', '1.5708', '0',  # roll pitch yaw (radians)  <-- adjust if needed
+            '0', '1.5708', '0',  # roll pitch yaw (radians)
             'world',
             'fixed_camera/camera_link/rgb_camera'
         ],
@@ -51,7 +58,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         gz_sim,
-        image_bridge,
+        camera_bridge,
         static_tf_world,
         rviz,
     ])
