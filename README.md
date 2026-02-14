@@ -1,6 +1,6 @@
 # Task Aware Robotics Perception
 
-This repository is a work in progress. Please refer to [(Working Document](https://github.com/andy0530/task-aware-robotic-perception/blob/main/docs/working_doc.md) for more information!
+This repository is a work in progress. Please refer to [Working Document](https://github.com/andy0530/task-aware-robotic-perception/blob/main/docs/working_doc.md) for more information!
 
 ### Disclaimer
 
