@@ -147,5 +147,24 @@
       </link>
     </model>
 
+    <!-- External Models -->
+    <include>
+      <name>Wires</name>
+      <pose>0.1 0 0.85 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/will0993/models/GoPro_HERO3_Composite_Cable</uri>
+    </include>
+
+    <include>
+      <name>Green Coke</name>
+      <pose>0 0.1 0.85 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/myoan/models/Movable green coke can</uri>
+    </include>
+
+    <include>
+      <name>Red Cup</name>
+      <pose>0.1 0.1 0.85 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/spotlightss/models/ACE_Coffee_Mug_Kristen_16_oz_cup</uri>
+    </include>
+
   </world>
 </sdf>
