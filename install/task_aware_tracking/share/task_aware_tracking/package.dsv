@@ -1,0 +1,9 @@
+source;share/task_aware_tracking/hook/pythonpath.ps1
+source;share/task_aware_tracking/hook/pythonpath.dsv
+source;share/task_aware_tracking/hook/pythonpath.sh
+source;share/task_aware_tracking/hook/ament_prefix_path.ps1
+source;share/task_aware_tracking/hook/ament_prefix_path.dsv
+source;share/task_aware_tracking/hook/ament_prefix_path.sh
+source;../../build/task_aware_tracking/share/task_aware_tracking/hook/pythonpath_develop.ps1
+source;../../build/task_aware_tracking/share/task_aware_tracking/hook/pythonpath_develop.dsv
+source;../../build/task_aware_tracking/share/task_aware_tracking/hook/pythonpath_develop.sh

@@ -55,10 +55,43 @@ def generate_launch_description():
         arguments=['-d', rviz_config],
         output='screen'
     )
+    
+    yolo_node = Node(
+        package='task_aware_perception',
+        executable='yolo_node',
+        output='screen',
+        parameters=[{
+            'venv_path': '/home/nd/venvs/task_aware_ml',
+            'device': 'cuda',
+            'conf': 0.35,
+        }],
+    )
 
+    sort_tracker = Node(
+        package='task_aware_tracking',
+        executable='sort_tracker',
+        output='screen',
+        parameters=[{
+            'iou_thresh': 0.3,
+            'max_age': 10,
+        }],
+    )
+
+    dashboard = Node(
+        package='task_aware_tools',
+        executable='dashboard',
+        output='screen',
+        parameters=[{
+            'refresh_hz': 5.0,
+        }],
+    )
+    
     return LaunchDescription([
         gz_sim,
         camera_bridge,
         static_tf_world,
         rviz,
+        yolo_node,
+        sort_tracker,
+        dashboard
     ])

@@ -167,12 +167,6 @@ class YoloDetectorNode(Node):
             out.header = msg.header
             self.pub_debug.publish(out)
 
-        # Log occasionally
-        if int(time.time()) % 5 == 0:
-            self.get_logger().info(
-                f"YOLO: {len(det_list)} dets | {dt_ms:.1f} ms (ema {self._ema_ms:.1f} ms) | conf={self.conf}"
-            )
-
 
 def main():
     rclpy.init()

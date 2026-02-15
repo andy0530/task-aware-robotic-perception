@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
+from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import String
@@ -45,6 +46,13 @@ class YoloStats:
     top_conf: float = 0.0
     ok: bool = False
 
+@dataclass
+class TrackStats:
+    last_wall_time: Optional[float] = None
+    num_tracks: int = 0
+    ids: str = "[]"
+    runtime_ms: float = 0.0
+    ok: bool = False
 
 
 class TaskAwareDashboard(Node):
@@ -58,14 +66,17 @@ class TaskAwareDashboard(Node):
         self.declare_parameter('camera_frame', 'fixed_camera/camera_link/rgb_camera')
         self.declare_parameter('refresh_hz', 1.0)
         self.declare_parameter('detections_topic', '/perception/detections')
-        self.detections_topic = self.get_parameter('detections_topic').get_parameter_value().string_value
-        self.yolo = YoloStats()
+        self.declare_parameter('tracks_topic', '/perception/tracks')
+
 
         self.image_topic = self.get_parameter('image_topic').get_parameter_value().string_value
         self.camera_info_topic = self.get_parameter('camera_info_topic').get_parameter_value().string_value
         self.fixed_frame = self.get_parameter('fixed_frame').get_parameter_value().string_value
         self.camera_frame = self.get_parameter('camera_frame').get_parameter_value().string_value
-        refresh_hz = self.get_parameter('refresh_hz').get_parameter_value().double_value
+        self.refresh_hz = self.get_parameter('refresh_hz').get_parameter_value().double_value
+        self.detections_topic = self.get_parameter('detections_topic').get_parameter_value().string_value
+        self.tracks_topic = self.get_parameter('tracks_topic').get_parameter_value().string_value
+        
 
         # ---- TF ----
         self.tf_buffer = Buffer()
@@ -76,18 +87,25 @@ class TaskAwareDashboard(Node):
         self.caminfo = CameraInfoStats()
 
         # ---- Subscribers ----
-        self.create_subscription(Image, self.image_topic, self.on_image, 10)
-        self.create_subscription(CameraInfo, self.camera_info_topic, self.on_camera_info, 10)
-        self.create_subscription(String, self.detections_topic, self.on_detections, 10)
-
+        self.create_subscription(Image, self.image_topic, self.on_image, qos_profile_sensor_data)
+        self.create_subscription(CameraInfo, self.camera_info_topic, self.on_camera_info, qos_profile_sensor_data)
+        self.create_subscription(String, self.detections_topic, self.on_detections, qos_profile_sensor_data)
+        self.create_subscription(String, self.tracks_topic, self.on_tracks, qos_profile_sensor_data)
 
         # ---- Publisher ----
         self.status_pub = self.create_publisher(String, '/task_aware/status', 10)
 
         # ---- Timer ----
-        period = 1.0 / max(refresh_hz, 0.1)
+        period = 1.0 / max(self.refresh_hz, 0.1)
         self.timer = self.create_timer(period, self.refresh)
 
+        # ---- YOLO ----
+        self.yolo = YoloStats()
+        
+        # ---- Tracker ----
+        self.trk = TrackStats()
+        
+        
         self.get_logger().info(
             f"Dashboard started.\n"
             f"  image_topic: {self.image_topic}\n"
@@ -170,11 +188,30 @@ class TaskAwareDashboard(Node):
             self.yolo.ok = True
         except Exception:
             self.yolo.ok = False
+            
+    def on_tracks(self, msg: String):
+        self.trk.last_wall_time = time.time()
+        try:
+            data = json.loads(msg.data)
+            self.trk.num_tracks = int(data.get("num_tracks", 0))
+            self.trk.runtime_ms = float(data.get("runtime_ms", 0.0))
+
+            tracks = data.get("tracks", [])
+            ids = [t.get("track_id") for t in tracks if "track_id" in t]
+            # show up to 8 ids for readability
+            ids = ids[:8]
+            self.trk.ids = str(ids)
+
+            self.trk.ok = True
+        except Exception:
+            self.trk.ok = False
+
 
     def refresh(self):
         img_stale = self._staleness_ms(self.img.last_wall_time)
         info_stale = self._staleness_ms(self.caminfo.last_wall_time)
         yolo_stale = self._staleness_ms(self.yolo.last_wall_time)
+        trk_stale = self._staleness_ms(self.trk.last_wall_time)
         tf_ok, tf_msg = self._tf_ok()
 
         # Bridge nodes (best-effort checks)
@@ -208,6 +245,12 @@ class TaskAwareDashboard(Node):
             f"top={self.yolo.top_label} {self.yolo.top_conf:.2f}  "
             f"ok={'YES' if self.yolo.ok else 'NO'}"
         )
+        trk_line = (
+            f"TRACK  topic={self.tracks_topic}  "
+            f"stale={trk_stale if trk_stale is not None else 'N/A'}ms  "
+            f"tracks={self.trk.num_tracks}  ids={self.trk.ids}  "
+            f"rt={self.trk.runtime_ms:.2f}ms  ok={'YES' if self.trk.ok else 'NO'}"
+        )
 
         # Print (clear-ish)
         print("\n" + "=" * 90)
@@ -216,11 +259,12 @@ class TaskAwareDashboard(Node):
         print(info_line)
         print(tf_line)
         print(yolo_line)
+        print(trk_line)
         print(sys_line)
 
         # Publish summary
         summary = String()
-        summary.data = f"{img_line} | {info_line} | {tf_line} | {yolo_line} | {sys_line}"
+        summary.data = f"{img_line} | {info_line} | {tf_line} | {yolo_line} | {trk_line} | {sys_line}"
         self.status_pub.publish(summary)
 
 
