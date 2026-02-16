@@ -363,7 +363,7 @@ The dashboard displays:
 Observability is treated as a first-class requirement.
 
 A screenshot of the live dashboard ouput for visual reference. (As of 02/15/2026)
-![Dashboard Example](assets/dashboard_example.png)
+![Dashboard Example](assets/dashboard_example2.png)
 
 ---
 
